@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BattleTags Pulse - 14 Day Infographic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        body { background-color: #0f172a; } /* Slate 900 */
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="text-slate-200 font-sans min-h-screen p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto space-y-8">
+        
+        <!-- Header Section -->
+        <header class="glass-panel p-8 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+            <div class="absolute -right-20 -top-20 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="z-10 text-center md:text-left">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3">
+                    <i data-lucide="activity" class="w-3 h-3"></i> League Pulse
+                </div>
+                <h1 class="text-4xl md:text-5xl font-black tracking-tighter text-white">The <span class="text-emerald-500">Damage</span> Report</h1>
+                <p id="date-range-display" class="text-slate-400 font-bold uppercase tracking-widest text-xs mt-2">Loading Date Range...</p>
+            </div>
+            
+            <div class="z-10 flex gap-4">
+                <div class="text-center px-6 py-4 bg-slate-800/80 rounded-2xl border border-slate-700/50 shadow-inner">
+                    <p class="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-1">Tags Swapped</p>
+                    <p id="stat-swapped" class="text-4xl font-black text-emerald-400 animate-pulse">-</p>
+                </div>
+                <div class="text-center px-6 py-4 bg-slate-800/80 rounded-2xl border border-slate-700/50 shadow-inner">
+                    <p class="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-1">Upcoming Battles</p>
+                    <p id="stat-upcoming" class="text-4xl font-black text-amber-400 animate-pulse">-</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- THE AFTERMATH: Past 14 Days -->
+            <section class="space-y-6">
+                <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i data-lucide="swords" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black text-white tracking-tight">The Aftermath</h2>
+                        <p class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Played in the last 14 days</p>
+                    </div>
+                </div>
+                
+                <div id="past-matches-container" class="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                    <div class="p-8 text-center text-slate-500 font-bold uppercase tracking-widest text-xs">Syncing database...</div>
+                </div>
+            </section>
+
+            <!-- THE HORIZON: Next 14 Days -->
+            <section class="space-y-6">
+                <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+                        <i data-lucide="calendar-clock" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black text-white tracking-tight">The Horizon</h2>
+                        <p class="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Scheduled in the next 14 days</p>
+                    </div>
+                </div>
+                
+                <div id="future-matches-container" class="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                    <div class="p-8 text-center text-slate-500 font-bold uppercase tracking-widest text-xs">Syncing database...</div>
+                </div>
+            </section>
+
+        </div>
+        
+        <footer class="text-center py-6 text-slate-600 text-[10px] font-black uppercase tracking-widest">
+            Generated via BattleTags Enterprise Database
+        </footer>
+
+    </div>
+
+    <!-- Firebase SDK 11.6.1 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, initializeFirestore, persistentLocalCache, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- FIREBASE CONFIGURATION ---
+        let firebaseConfig;
+        let activeAppId;
+        
+        try {
+            firebaseConfig = JSON.parse(__firebase_config);
+            activeAppId = typeof __app_id !== 'undefined' ? __app_id : 'friday-harbour-battle-tags';
+        } catch (e) {
+            firebaseConfig = {
+                apiKey: "AIzaSyDf_1RE4hscqVVbHoN7Vvqoylj8elWLUn4",
+                authDomain: "battletags-27390.firebaseapp.com",
+                projectId: "battletags-27390",
+                storageBucket: "battletags-27390.firebasestorage.app",
+                messagingSenderId: "930795580018",
+                appId: "1:930795580018:web:b82b95d64572483f85f0eb"
+            };
+            activeAppId = 'friday-harbour-battle-tags';
+        }
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        let db;
+        try { db = initializeFirestore(app, { localCache: persistentLocalCache() }); } 
+        catch (e) { db = getFirestore(app); }
+
+        lucide.createIcons();
+
+        // --- DATE LOGIC ---
+        // Get today's local date in YYYY-MM-DD format
+        const today = new Date();
+        const todayStr = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+
+        // Past 14 Days
+        const past14 = new Date(today);
+        past14.setDate(today.getDate() - 14);
+        const past14Str = new Date(past14.getTime() - (past14.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+
+        // Next 14 Days
+        const next14 = new Date(today);
+        next14.setDate(today.getDate() + 14);
+        const next14Str = new Date(next14.getTime() - (next14.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+
+        // Format dates for display
+        const displayFormat = { month: 'short', day: 'numeric' };
+        document.getElementById('date-range-display').innerText = 
+            `${past14.toLocaleDateString('en-US', displayFormat)} — ${next14.toLocaleDateString('en-US', displayFormat)}`;
+
+        // --- INIT SYNC ---
+        async function init() {
+            try {
+                await signInAnonymously(auth);
+                listenToMatches();
+            } catch (err) {
+                console.error("Connection failed:", err);
+            }
+        }
+
+        function listenToMatches() {
+            const mQuery = collection(db, 'artifacts', activeAppId, 'public', 'data', 'matches');
+            onSnapshot(mQuery, (snapshot) => {
+                const matches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderPulse(matches);
+            }, (error) => {
+                console.error("Sync Error:", error);
+            });
+        }
+
+        function renderPulse(matches) {
+            // 1. Filter Past Matches
+            const pastMatches = matches.filter(m => 
+                m.status === 'completed' && 
+                m.date >= past14Str && 
+                m.date <= todayStr
+            ).sort((a, b) => new Date(b.date) - new Date(a.date)); // Newest first
+
+            // 2. Filter Future Matches
+            const futureMatches = matches.filter(m => 
+                m.status === 'scheduled' && 
+                m.scheduledDate >= todayStr && 
+                m.scheduledDate <= next14Str
+            ).sort((a, b) => new Date(a.scheduledDate) - new Date(b.scheduledDate)); // Soonest first
+
+            // Update Stats
+            document.getElementById('stat-swapped').innerText = pastMatches.length;
+            document.getElementById('stat-swapped').classList.remove('animate-pulse');
+            
+            document.getElementById('stat-upcoming').innerText = futureMatches.length;
+            document.getElementById('stat-upcoming').classList.remove('animate-pulse');
+
+            // Render Past (The Aftermath)
+            const pastContainer = document.getElementById('past-matches-container');
+            if (pastMatches.length === 0) {
+                pastContainer.innerHTML = `
+                    <div class="glass-panel p-8 rounded-3xl text-center border-dashed border-slate-700">
+                        <p class="text-slate-500 font-bold uppercase tracking-widest text-xs">No tags captured in the last 14 days.</p>
+                    </div>`;
+            } else {
+                pastContainer.innerHTML = pastMatches.map(m => {
+                    const photoHtml = m.photoUrl ? `
+                        <div class="w-16 h-16 shrink-0 rounded-xl overflow-hidden border-2 border-emerald-500/30">
+                            <img src="${m.photoUrl}" alt="Evidence" class="w-full h-full object-cover">
+                        </div>
+                    ` : `
+                        <div class="w-16 h-16 shrink-0 rounded-xl bg-slate-800/50 flex items-center justify-center border border-slate-700">
+                            <i data-lucide="camera-off" class="w-5 h-5 text-slate-600"></i>
+                        </div>
+                    `;
+
+                    return `
+                    <div class="glass-panel p-5 rounded-[2rem] flex items-center gap-5 relative overflow-hidden group hover:border-emerald-500/50 transition-colors">
+                        <div class="absolute top-0 bottom-0 left-0 w-1 bg-emerald-500"></div>
+                        ${photoHtml}
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded-md"><i data-lucide="calendar" class="w-3 h-3 inline pb-0.5"></i> ${m.date}</span>
+                                <span class="text-[10px] font-black text-emerald-500 tracking-wider">${m.score}</span>
+                            </div>
+                            <h3 class="text-lg font-black text-white tracking-tight uppercase">${m.winner} <span class="text-emerald-500 text-sm font-bold lowercase mx-1">def.</span> ${m.loser}</h3>
+                        </div>
+                    </div>
+                `}).join('');
+            }
+
+            // Render Future (The Horizon)
+            const futureContainer = document.getElementById('future-matches-container');
+            if (futureMatches.length === 0) {
+                futureContainer.innerHTML = `
+                    <div class="glass-panel p-8 rounded-3xl text-center border-dashed border-slate-700">
+                        <p class="text-slate-500 font-bold uppercase tracking-widest text-xs">No battles scheduled for the next 14 days.</p>
+                    </div>`;
+            } else {
+                futureContainer.innerHTML = futureMatches.map(m => {
+                    // Check if the match is happening TODAY
+                    const isToday = m.scheduledDate === todayStr;
+                    const dateBadgeClass = isToday ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/10 text-amber-400';
+                    const dateIcon = isToday ? 'alert-circle' : 'calendar-clock';
+                    const dateText = isToday ? 'TODAY' : m.scheduledDate;
+                    
+                    return `
+                    <div class="glass-panel p-5 rounded-[2rem] flex items-center justify-between relative overflow-hidden hover:border-amber-500/50 transition-colors">
+                        <div class="absolute top-0 bottom-0 left-0 w-1 bg-amber-500"></div>
+                        <div class="text-left">
+                            <div class="mb-2 inline-block">
+                                <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${dateBadgeClass}">
+                                    <i data-lucide="${dateIcon}" class="w-3 h-3 inline pb-0.5"></i> ${dateText}
+                                </span>
+                            </div>
+                            <h3 class="text-lg font-black text-white tracking-tight uppercase">${m.player1} <span class="text-slate-500 text-sm font-bold lowercase mx-1">vs</span> ${m.player2}</h3>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center shadow-inner border border-slate-700 text-slate-500">
+                            <span class="text-lg drop-shadow-md">⚔️</span>
+                        </div>
+                    </div>
+                `}).join('');
+            }
+
+            lucide.createIcons();
+        }
+
+        init();
+    </script>
+</body>
+</html>
