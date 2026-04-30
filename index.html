@@ -69,10 +69,10 @@
                     </div>
                 </div>
 
-                <!-- Top Bookers -->
+                <!-- All Active Bookers -->
                 <div class="bg-slate-800/50 border border-slate-700 p-5 rounded-[1.5rem]">
-                    <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><i data-lucide="flame" class="w-4 h-4 text-amber-400"></i> Top 3 Bookers</h3>
-                    <div id="insight-top-bookers" class="space-y-2">
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><i data-lucide="flame" class="w-4 h-4 text-amber-400"></i> Active Bookers</h3>
+                    <div id="insight-top-bookers" class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar pr-2">
                         <div class="text-center py-2"><span class="text-slate-500 text-xs font-bold uppercase tracking-widest">Loading...</span></div>
                     </div>
                 </div>
@@ -313,7 +313,7 @@
                 document.getElementById('insight-busiest-day').innerHTML = `<span class="text-slate-600 text-xs font-bold uppercase tracking-widest">No matches booked</span>`;
             }
 
-            // 2. Calculate Top Bookers & MIA
+            // 2. Calculate Active Bookers & MIA
             const playerCounts = {};
             globalPlayers.forEach(p => playerCounts[p.name] = 0);
             insightMatches.forEach(m => {
@@ -323,9 +323,9 @@
             
             const sortedBookers = Object.entries(playerCounts).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]));
             
-            // Top 3
-            const top3 = sortedBookers.filter(b => b[1] > 0).slice(0, 3);
-            const topBookersHtml = top3.length > 0 ? top3.map((b, i) => `
+            // All Active Bookers
+            const activeBookers = sortedBookers.filter(b => b[1] > 0);
+            const topBookersHtml = activeBookers.length > 0 ? activeBookers.map((b, i) => `
                 <div class="flex items-center justify-between bg-slate-900/50 p-2 rounded-xl border border-slate-700/50">
                     <span class="text-xs font-bold text-white uppercase tracking-tight flex items-center gap-2">
                         <span class="text-amber-500 font-black">${i === 0 ? '👑' : i+1+'.'}</span> ${b[0]}
