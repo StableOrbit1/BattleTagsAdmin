@@ -281,23 +281,19 @@
             document.getElementById('insights-subtitle').innerText = selectedWeekIndex === 0 ? "Pre-Launch Hype Data" : `Stats for ${currentWeek.label.split(':')[0]}`;
 
             // --- FILTER MATCHES FOR THE LISTS ---
+            // If Pre-Launch (index 0), show ALL completed matches and ALL future scheduled matches.
             const pastMatches = globalMatches.filter(m => 
                 m.status === 'completed' && 
-                m.date >= currentWeek.start && 
-                m.date <= currentWeek.end
+                (selectedWeekIndex === 0 || (m.date >= currentWeek.start && m.date <= currentWeek.end))
             ).sort((a, b) => new Date(b.date) - new Date(a.date));
 
             const futureMatches = globalMatches.filter(m => 
                 m.status === 'scheduled' && 
-                m.scheduledDate >= currentWeek.start && 
-                m.scheduledDate <= currentWeek.end
+                (selectedWeekIndex === 0 || (m.scheduledDate >= currentWeek.start && m.scheduledDate <= currentWeek.end))
             ).sort((a, b) => new Date(a.scheduledDate) - new Date(b.scheduledDate));
 
             // --- FILTER MATCHES FOR INSIGHTS ---
-            // If Pre-Launch, we evaluate ALL scheduled matches to see the hype. Otherwise, just this week's matches.
-            const insightMatches = selectedWeekIndex === 0 
-                ? globalMatches.filter(m => m.status === 'scheduled') 
-                : futureMatches;
+            const insightMatches = futureMatches;
 
             // 1. Calculate Busiest Day
             const dayCounts = {};
